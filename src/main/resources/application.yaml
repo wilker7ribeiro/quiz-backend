@@ -1,0 +1,47 @@
+
+quiz:
+  quantidade_perguntas_por_quiz: 10
+  tempo_maximo_duracao_quiz: 600
+  pontuacao_resposta_correta: 10
+  penalidade_resposta_incorreta: 9
+spring:
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    time-zone: UTC
+    serialization:
+      write_dates_as_timestamps: false
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DUNGEONS_DATA_HOST}/${DUNGEONS_DATA_DATABASE}
+    username: ${DUNGEONS_DATA_USER}
+    password: ${DUNGEONS_DATA_PASSWORD}
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+springdoc:
+  show-actuator: true
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  health:
+    probes:
+      enabled: true
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: 'health,prometheus,env'
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    prometheus:
+      enabled: true
+    env:
+      enabled: true
