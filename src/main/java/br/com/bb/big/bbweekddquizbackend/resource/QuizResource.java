@@ -26,7 +26,7 @@ public class QuizResource {
     @GetMapping("/{quizId}/ranking/dia/{dia}")
     public ResponseEntity<List<RankingQuizItemDTO>> consultarRankingQuiz(
             @PathVariable("quizId") Integer quizId, @PathVariable("dia") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dia
-    ) {
+    ) throws BaseException {
         return ResponseEntity.ok(service.obterRankingPorQuizIdAndDia(quizId, dia));
     }
 

@@ -1,9 +1,0 @@
-FROM docker.binarios.intranet.bb.com.br/bb/dev/dev-java-jdk-11:11.0.16
-
-ENV MVNW_VERBOSE=true
-
-ENV AB_ENABLED=jmx_exporter
-
-WORKDIR /app
-
-CMD ["mvn", spring-boot:run]

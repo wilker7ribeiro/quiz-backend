@@ -38,3 +38,8 @@ application-local.yml
 
 ### local conf ###
 .env
+
+csv_data
+src/main/resources/db/migration
+postgres_data
+db

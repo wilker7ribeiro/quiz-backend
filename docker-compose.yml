@@ -1,0 +1,42 @@
+version: '2'
+
+services:
+  bb-week-dd-quiz-backend:
+    image: 'bb-week-dd-quiz-backend:latest' # Backend
+    volumes:
+      - ./src/main/resources/db:/app/db
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: bb-week-dd-quiz-backend
+    ports:
+      - 8080:8080
+    networks:
+      - bb-week-dd-quiz-network
+    depends_on:
+      - bb-week-dd-quiz-database
+    environment:
+      - DATASOURCE_HOST=jdbc:postgresql://bb-week-dd-quiz-database:5432
+      - DATASOURCE_DATABASE=postgres
+      - DATASOURCE_USER=bb-week-dd-quiz-database-user
+      - DATASOURCE_PASSWORD=YfjaGEktuKnvHqcrwwDPDG
+      - DATASOURCE_SCHEMA=public
+          
+  bb-week-dd-quiz-database: # database
+    image: 'postgres:16'
+    container_name: bb-week-dd-quiz-database
+    networks:
+      - bb-week-dd-quiz-network
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=bb-week-dd-quiz-database-user
+      - POSTGRES_PASSWORD=YfjaGEktuKnvHqcrwwDPDG
+networks:
+  bb-week-dd-quiz-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.57.0/24

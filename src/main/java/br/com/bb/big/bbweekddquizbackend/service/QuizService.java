@@ -45,7 +45,8 @@ public class QuizService {
         this.perguntaMapper = perguntaMapper;
     }
 
-    public List<RankingQuizItemDTO> obterRankingPorQuizIdAndDia(Integer quizId, LocalDate dia) {
+    public List<RankingQuizItemDTO> obterRankingPorQuizIdAndDia(Integer quizId, LocalDate dia) throws QuizNaoEncontradoException {
+        if(!this.repository.existsById(quizId)) throw new QuizNaoEncontradoException(quizId);
         List<RankingQuizItemDTO> rankingLista = new ArrayList<>();
         List<Object[]> items = this.repository.obterRankinQuiz(quizId, dia, quantidadePerguntasPorQuiz, tempoMaximoDuracaoQuiz, pontuacaoPorRespostaCorreta, penalidadeRespostaIncorreta, Pageable.ofSize(10));
         for (int i = 0; i < items.size(); i++) {

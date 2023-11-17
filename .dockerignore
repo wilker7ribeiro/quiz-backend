@@ -1,0 +1,3 @@
+src/main/resources/db/migration
+*/target
+.env

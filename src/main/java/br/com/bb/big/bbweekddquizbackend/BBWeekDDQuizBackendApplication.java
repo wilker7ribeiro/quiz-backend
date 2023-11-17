@@ -40,6 +40,20 @@ public class BBWeekDDQuizBackendApplication {
 		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 		return mapper;
 	}
+
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurerAdapter() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/**")
+					.allowedOrigins("*")
+					.allowedMethods("*")
+					.allowedHeaders("*");
+			}
+		};
+	}
+
 	@Bean
 	public OpenAPI bigBBWeekDDQuizBackendOpenAPI() {
 		return new OpenAPI()

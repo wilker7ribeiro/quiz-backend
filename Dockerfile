@@ -1,10 +1,18 @@
-FROM docker.binarios.intranet.bb.com.br/bb/dev/dev-java-jdk-11:11.0.16
+FROM eclipse-temurin:17-jdk-alpine as build
+WORKDIR /workspace/app
 
-COPY --chown=185 target/*.jar /deployments/app.jar
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
 
-USER root
-COPY inicio.sh /usr/local/bin/inicio.sh
-RUN chmod 755 /usr/local/bin/inicio.sh
+RUN ./mvnw install -DskipTests
+RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
-USER jboss
-CMD ["/usr/local/bin/inicio.sh"]
+FROM eclipse-temurin:17-jdk-alpine
+VOLUME /tmp
+ARG DEPENDENCY=/workspace/app/target/dependency
+COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
+COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
+COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
+ENTRYPOINT ["java","-cp","app:app/lib/*","br.com.bb.big.bbweekddquizbackend.BBWeekDDQuizBackendApplication"]

@@ -21,7 +21,7 @@ public class PerguntaOpcao implements Serializable {
     @Column(nullable = false)
     private Integer perguntaId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 510)
     private String descricao;
 
     @Column(nullable = false)

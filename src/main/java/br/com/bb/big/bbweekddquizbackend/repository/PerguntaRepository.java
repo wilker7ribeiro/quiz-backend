@@ -24,6 +24,7 @@ public interface PerguntaRepository extends JpaRepository<Pergunta, Integer> {
     @Query(
             " SELECT pergunta FROM Quiz quiz" +
             "  JOIN quiz.perguntas pergunta " +
+            "  JOIN FETCH pergunta.opcoes opcao " +
             " WHERE quiz.id = :quizId" +
             " ORDER BY rand()"
     )

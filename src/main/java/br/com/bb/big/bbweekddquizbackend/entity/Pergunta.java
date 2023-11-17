@@ -16,7 +16,7 @@ public class Pergunta implements Serializable {
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Integer id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 510)
     private String descricao;
 
     @OneToMany(fetch = FetchType.LAZY)
