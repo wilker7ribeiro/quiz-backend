@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.validation.ValidationException;
@@ -109,11 +110,10 @@ public class ParticipacaoService {
 
     @Transactional
     public ParticipacaoDTO iniciarParticipacao(Integer quizId, ParticipanteDTO participanteDTO) throws QuizNaoEncontradoException, ParticipanteJaParticipouDoQuizHojeException, FuncionarioNaoEncontradoException {
-        Quiz quiz = this.quizRepository.findById(quizId).orElseThrow(() -> new QuizNaoEncontradoException(quizId));
-        Participante participante = criarParticipante(participanteDTO);
-
         LocalDateTime agora = LocalDateTime.now();
         LocalDate hoje = agora.toLocalDate();
+        Quiz quiz = this.quizRepository.findById(quizId).orElseThrow(() -> new QuizNaoEncontradoException(quizId));
+        Participante participante = criarParticipante(participanteDTO);
         Optional<Participacao> participacaoSalva = this.repository.findByQuizIdAndParticipanteIdAndDataInicio(quizId, participante.getId(), hoje);
         if(participacaoSalva.isPresent()) {
             throw new ParticipanteJaParticipouDoQuizHojeException(quizId, participante.getId(), participacaoSalva.get().getId(), hoje);
@@ -139,6 +139,7 @@ public class ParticipacaoService {
 
     @Transactional
     public RetornoResponderPerguntaDTO responderPergunta(Integer participacaoId, Integer perguntaId, Integer opcaoId) throws ParticipacaoNaoEncontradaException, QuizNaoPossuiPerguntaException, PerguntaNaoPossuiOpcaoException, ParticipanteJaRespondeuTodasAsPerguntas, ParticipanteJaRespondeuEssaPergunta, TempoParaResponderOQuizEncerradoException {
+        LocalDateTime agora = LocalDateTime.now();
         Participacao participacao = this.repository.findByIdWithQuiz(participacaoId).orElseThrow(() -> new ParticipacaoNaoEncontradaException(participacaoId));
         Integer quizId = participacao.getQuiz().getId();
         if(!this.quizRepository.possuiPerguntaComId(quizId, perguntaId)) {
@@ -151,13 +152,8 @@ public class ParticipacaoService {
         if(quantidadePerguntasJaRespondidas >= quantidadePerguntasPorQuiz){
             throw new ParticipanteJaRespondeuTodasAsPerguntas(participacaoId);
         }
-        LocalDateTime agora = LocalDateTime.now();
-        if (Objects.nonNull(participacao.getDataFim()) && agora.isAfter(participacao.getDataInicio().plusSeconds(tempoMaximoDuracaoQuiz))) {
+        if (Objects.nonNull(participacao.getDataFim()) || agora.isAfter(participacao.getDataInicio().plusSeconds(tempoMaximoDuracaoQuiz))) {
             throw new TempoParaResponderOQuizEncerradoException(participacaoId);
-        }
-        if(quantidadePerguntasJaRespondidas + 1 == quantidadePerguntasPorQuiz) {
-            participacao.setDataFim(agora);
-            participacao = this.repository.save(participacao);
         }
         ParticipacaoRespostaID perguntaRespostaId = ParticipacaoRespostaID.builder()
                 .participacaoId(participacaoId)
@@ -175,6 +171,10 @@ public class ParticipacaoService {
                 .id(perguntaRespostaId)
                 .build();
         ParticipacaoResposta respostaSalva = this.participacaoRespostaRepository.save(participacaoResposta);
+        if(quantidadePerguntasJaRespondidas + 1 == quantidadePerguntasPorQuiz) {
+            participacao.setDataFim(agora);
+            this.repository.save(participacao);
+        }
         return RetornoResponderPerguntaDTO.builder()
                 .participacaoId(participacaoId)
                 .perguntaId(perguntaId)
@@ -182,14 +182,15 @@ public class ParticipacaoService {
                 .correta(respostaSalva.getOpcao().getCorreta())
                 .build();
     }
-    @Scheduled(fixedRate = 5000)
-    @Transactional
+    @Scheduled(fixedRate = 1000)
     public void finalizarQuizPorTempo() {
         LocalDateTime agora = LocalDateTime.now();
         LocalDateTime dataInicioVencimento = agora.minus(tempoMaximoDuracaoQuiz, ChronoUnit.SECONDS);
         List<Participacao> participacoes = this.repository.findAllByDataFimIsNullAndDataInicioLessThan(dataInicioVencimento);
-        participacoes.forEach(participacao -> participacao.setDataFim(participacao.getDataInicio().plusSeconds(tempoMaximoDuracaoQuiz)));
-        this.repository.saveAll(participacoes);
+        if(!CollectionUtils.isEmpty(participacoes)) {
+            participacoes.forEach(participacao -> participacao.setDataFim(participacao.getDataInicio().plusSeconds(tempoMaximoDuracaoQuiz)));
+            this.repository.saveAll(participacoes);
+        }
     }
 
 
@@ -203,16 +204,20 @@ public class ParticipacaoService {
         double multiplizadorDuracao = new BigDecimal((double) tempoMaximoDuracaoQuiz / duracao).setScale(2, RoundingMode.HALF_UP).doubleValue();
         Long pontuacaoRespostasCorretas = quantidadeAcertos * this.pontuacaoPorRespostaCorreta;
         Long penalidadeRespostaSIncorretas = (quantidadePerguntasPorQuiz - quantidadeAcertos) * penalidadeRespostaIncorreta;
-        Long pontuacaoTotal = (long) Math.floor(Math.max((pontuacaoRespostasCorretas - penalidadeRespostaSIncorretas) * multiplizadorDuracao, 0));
+        long pontuacaoTotalRespostas = pontuacaoRespostasCorretas - penalidadeRespostaSIncorretas;
+        Long pontuacaoTotal = (long) Math.floor(Math.max(pontuacaoTotalRespostas * multiplizadorDuracao, 0));
+        Long pontuacaoTotalTempo = pontuacaoTotal - pontuacaoTotalRespostas;
         return ResultadoParticipacaoDTO.builder()
                 .dataFim(dataFim)
                 .dataInicio(participacao.getDataInicio())
                 .participacaoId(participacaoId)
-                .multiplicadorDuracao(multiplizadorDuracao)
+                .multiplicadorTempo(multiplizadorDuracao)
                 .quantidadePerguntasCorretas(Math.toIntExact(quantidadeAcertos))
                 .quantidadeTotalPerguntas(quantidadePerguntasPorQuiz)
                 .pontuacaoRespostasCorretas(pontuacaoRespostasCorretas)
                 .penalidadeRespostasIncorretas(penalidadeRespostaSIncorretas)
+                .pontuacaoTotalRespostas(pontuacaoTotalRespostas)
+                .pontuacaoTotalTempo(pontuacaoTotalTempo)
                 .pontuacaoTotal(pontuacaoTotal)
                 .build();
     }

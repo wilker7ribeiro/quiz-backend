@@ -47,7 +47,7 @@ public class ParticipacaoResource {
     }
 
     @Operation(summary = "Obter o resultado da participação")
-    @GetMapping("/resultado/{participacaoId}")
+    @GetMapping("/{participacaoId}/resultado")
     public ResponseEntity<ResultadoParticipacaoDTO> obterResultadoParticipacao(
             @PathVariable("participacaoId") Integer participacaoId
     ) throws BaseException {
