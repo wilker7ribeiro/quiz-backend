@@ -41,4 +41,5 @@ application-local.yml
 
 csv_data
 postgres_data
-db
+
+src/main/resources/db/migration/V3__popular_colaboradores.sql
