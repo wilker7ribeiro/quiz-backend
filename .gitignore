@@ -40,6 +40,5 @@ application-local.yml
 .env
 
 csv_data
-src/main/resources/db/migration
 postgres_data
 db
