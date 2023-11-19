@@ -80,11 +80,7 @@ public class ParticipacaoService {
         }
         Optional<Participante> participanteOpt = this.participanteRepository.findByEmailOrMatricula(participanteDTO.getEmail(), participanteDTO.getMatricula());
         if (participanteOpt.isPresent()) {
-            Participante participante = participanteOpt.get();
-            if (StringUtils.hasLength(participanteDTO.getNome())) {
-                participante.setNome(participanteDTO.getNome());
-            }
-            return participante;
+            return participanteOpt.get();
         } else if(StringUtils.hasLength(participanteDTO.getMatricula())) {
             Colaborador colaborador = colaboradorRepository.findByChaveIgnoreCase(participanteDTO.getMatricula())
                     .orElseThrow(() -> new FuncionarioNaoEncontradoException(participanteDTO.getMatricula()));
