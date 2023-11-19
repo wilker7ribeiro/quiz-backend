@@ -118,8 +118,6 @@ public class ParticipacaoService {
         if(participacaoSalva.isPresent()) {
             throw new ParticipanteJaParticipouDoQuizHojeException(quizId, participante.getId(), participacaoSalva.get().getId(), hoje);
         }
-        // Atualiza o nome do participante
-        participante.setNome(participanteDTO.getNome());
 
         if (Objects.nonNull(participanteDTO.getMatricula()) && !StringUtils.hasLength(participanteDTO.getNome())){
             colaboradorRepository.findById(participanteDTO.getMatricula()).ifPresent(colaborador -> participanteDTO.setNome(colaborador.getNome()));
