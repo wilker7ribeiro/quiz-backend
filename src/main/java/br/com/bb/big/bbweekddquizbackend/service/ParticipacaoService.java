@@ -37,9 +37,9 @@ public class ParticipacaoService {
     @Value("${quiz.tempo_maximo_duracao_quiz}")
     private Integer tempoMaximoDuracaoQuiz;
     @Value("${quiz.pontuacao_resposta_correta}")
-    private Integer pontuacaoPorRespostaCorreta;
+    private BigDecimal pontuacaoPorRespostaCorreta;
     @Value("${quiz.penalidade_resposta_incorreta}")
-    private Integer penalidadeRespostaIncorreta;
+    private BigDecimal penalidadeRespostaIncorreta;
 
     private final ParticipacaoRepository repository;
     private final ParticipanteRepository participanteRepository;
@@ -196,28 +196,40 @@ public class ParticipacaoService {
     public ResultadoParticipacaoDTO obterResultadoParticipacao(Integer participacaoId) throws ParticipacaoNaoEncontradaException {
         Participacao participacao = this.repository.findByIdWithRespostas(participacaoId).orElseThrow(() -> new ParticipacaoNaoEncontradaException(participacaoId));
         Long quantidadeAcertos = participacao.getRespostas().stream().filter(r -> r.getOpcao().getCorreta()).count();
-        LocalDateTime agora = LocalDateTime.now();
-        participacao = this.repository.save(participacao);
+        Long quantidadeErros = quantidadePerguntasPorQuiz - quantidadeAcertos;
         LocalDateTime dataFim = Objects.requireNonNullElse(participacao.getDataFim(), participacao.getDataInicio().plusSeconds(tempoMaximoDuracaoQuiz));
         long duracao = Math.min(ChronoUnit.SECONDS.between(participacao.getDataInicio(), dataFim), tempoMaximoDuracaoQuiz);
-        double multiplizadorDuracao = new BigDecimal((double) tempoMaximoDuracaoQuiz / duracao).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        Long pontuacaoRespostasCorretas = quantidadeAcertos * this.pontuacaoPorRespostaCorreta;
-        Long penalidadeRespostaSIncorretas = (quantidadePerguntasPorQuiz - quantidadeAcertos) * penalidadeRespostaIncorreta;
-        long pontuacaoTotalRespostas = pontuacaoRespostasCorretas - penalidadeRespostaSIncorretas;
-        Long pontuacaoTotal = (long) Math.floor(Math.max(pontuacaoTotalRespostas * multiplizadorDuracao, 0));
-        Long pontuacaoTotalTempo = pontuacaoTotal - pontuacaoTotalRespostas;
+        BigDecimal pontuacaoRespostasCorretas = this.pontuacaoPorRespostaCorreta.multiply(BigDecimal.valueOf(quantidadeAcertos));
+        BigDecimal multiplicadorRespostaIncorreta = BigDecimal.ONE.subtract(penalidadeRespostaIncorreta.multiply(BigDecimal.valueOf(quantidadeErros)));
+        BigDecimal pontuacaoTotalRespostas = pontuacaoRespostasCorretas.multiply(multiplicadorRespostaIncorreta).setScale(1, RoundingMode.FLOOR);
+        BigDecimal multiplizadorDuracao = BigDecimal.valueOf(duracao).divide(BigDecimal.valueOf(tempoMaximoDuracaoQuiz), 5, RoundingMode.FLOOR);
+        BigDecimal pontuacaoTotalDuracao = pontuacaoRespostasCorretas.multiply(BigDecimal.ONE.subtract(multiplizadorDuracao)).setScale(1, RoundingMode.FLOOR);
+        BigDecimal pontuacaoTotal = pontuacaoTotalRespostas.add(pontuacaoTotalDuracao).max(BigDecimal.ZERO).setScale(1, RoundingMode.FLOOR);
         return ResultadoParticipacaoDTO.builder()
                 .dataFim(dataFim)
                 .dataInicio(participacao.getDataInicio())
                 .participacaoId(participacaoId)
                 .multiplicadorTempo(multiplizadorDuracao)
+                .multiplicadorRespostasIncorreta(multiplicadorRespostaIncorreta)
                 .quantidadePerguntasCorretas(Math.toIntExact(quantidadeAcertos))
                 .quantidadeTotalPerguntas(quantidadePerguntasPorQuiz)
                 .pontuacaoRespostasCorretas(pontuacaoRespostasCorretas)
-                .penalidadeRespostasIncorretas(penalidadeRespostaSIncorretas)
                 .pontuacaoTotalRespostas(pontuacaoTotalRespostas)
-                .pontuacaoTotalTempo(pontuacaoTotalTempo)
+                .pontuacaoTotalTempo(pontuacaoTotalDuracao)
                 .pontuacaoTotal(pontuacaoTotal)
                 .build();
+    }
+
+    public float round(float value, int places, RoundingMode roundingMode) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(places, roundingMode);
+        return bd.floatValue();
+    }
+
+    public BigDecimal round(BigDecimal bd, int places, RoundingMode roundingMode) {
+        if (places < 0) throw new IllegalArgumentException();
+        return bd.setScale(places, roundingMode);
     }
 }

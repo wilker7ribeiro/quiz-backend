@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,9 +28,9 @@ public class QuizService {
     @Value("${quiz.tempo_maximo_duracao_quiz}")
     private Integer tempoMaximoDuracaoQuiz;
     @Value("${quiz.pontuacao_resposta_correta}")
-    private Long pontuacaoPorRespostaCorreta;
+    private BigDecimal pontuacaoPorRespostaCorreta;
     @Value("${quiz.penalidade_resposta_incorreta}")
-    private Long penalidadeRespostaIncorreta;
+    private BigDecimal penalidadeRespostaIncorreta;
     private final QuizRepository repository;
     private final PerguntaRepository perguntaRepository;
     private final QuizMapper mapper;
@@ -50,7 +52,7 @@ public class QuizService {
         List<RankingQuizItemDTO> rankingLista = new ArrayList<>();
         List<Object[]> items = this.repository.obterRankinQuiz(quizId, dia, quantidadePerguntasPorQuiz, tempoMaximoDuracaoQuiz, pontuacaoPorRespostaCorreta, penalidadeRespostaIncorreta, Pageable.ofSize(10));
         for (int i = 0; i < items.size(); i++) {
-            rankingLista.add(new RankingQuizItemDTO(i + 1, (String) items.get(i)[0], Math.max((Long) items.get(i)[1], 0)));
+            rankingLista.add(new RankingQuizItemDTO(i + 1, (String) items.get(i)[0], ((BigDecimal) items.get(0)[1]).max(BigDecimal.ZERO).setScale(1, RoundingMode.FLOOR)));
         }
         return rankingLista;
     }

@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -12,5 +14,5 @@ import lombok.NoArgsConstructor;
 public class RankingQuizItemDTO {
     private Integer posicao;
     private String nome;
-    private Long pontuacao;
+    private BigDecimal pontuacao;
 }
