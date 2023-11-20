@@ -32,7 +32,7 @@ public class ParticipanteService {
 
 
     public Optional<ParticipanteDTO> consultaPorEmail(String email) {
-        return this.repository.findByEmail(email).map(this.mapper::toDto);
+        return this.repository.findByEmailIgnoreCase(email).map(this.mapper::toDto);
     }
 
 

@@ -78,7 +78,12 @@ public class ParticipacaoService {
         if(!StringUtils.hasLength(participanteDTO.getMatricula()) && !StringUtils.hasLength(participanteDTO.getEmail())) {
             throw new ValidationException("O campo matricula ou email é obrigatório");
         }
-        Optional<Participante> participanteOpt = this.participanteRepository.findByEmailOrMatricula(participanteDTO.getEmail(), participanteDTO.getMatricula());
+        Optional<Participante> participanteOpt;
+        if(StringUtils.hasLength(participanteDTO.getMatricula())) {
+            participanteOpt = this.participanteRepository.findByMatriculaIgnoreCase(participanteDTO.getMatricula());
+        } else {
+            participanteOpt = this.participanteRepository.findByEmailIgnoreCase(participanteDTO.getEmail());
+        }
         if (participanteOpt.isPresent()) {
             return participanteOpt.get();
         } else if(StringUtils.hasLength(participanteDTO.getMatricula())) {

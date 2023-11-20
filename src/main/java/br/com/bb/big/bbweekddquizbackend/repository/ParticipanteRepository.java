@@ -8,9 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface ParticipanteRepository extends JpaRepository<Participante, Integer> {
-    Optional<Participante> findByEmailOrMatriculaOrNome(String email, String matricula, String nome);
+    Optional<Participante> findByMatriculaIgnoreCase(String matricula);
 
-    Optional<Participante> findByEmail(String email);
-
-    Optional<Participante> findByEmailOrMatricula(String email, String matricula);
+    Optional<Participante> findByEmailIgnoreCase(String email);
 }
