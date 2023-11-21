@@ -52,7 +52,7 @@ public class QuizService {
         List<RankingQuizItemDTO> rankingLista = new ArrayList<>();
         List<Object[]> items = this.repository.obterRankinQuiz(quizId, dia, quantidadePerguntasPorQuiz, tempoMaximoDuracaoQuiz, pontuacaoPorRespostaCorreta, penalidadeRespostaIncorreta, Pageable.ofSize(10));
         for (int i = 0; i < items.size(); i++) {
-            rankingLista.add(new RankingQuizItemDTO(i + 1, (String) items.get(i)[0], ((BigDecimal) items.get(0)[1]).max(BigDecimal.ZERO).setScale(1, RoundingMode.FLOOR)));
+            rankingLista.add(new RankingQuizItemDTO(i + 1, (String) items.get(i)[0], ((BigDecimal) items.get(i)[1]).max(BigDecimal.ZERO).setScale(1, RoundingMode.FLOOR)));
         }
         return rankingLista;
     }
