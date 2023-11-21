@@ -1,7 +1,7 @@
 
 quiz:
   quantidade_perguntas_por_quiz: 10
-  tempo_maximo_duracao_quiz: 600
+  tempo_maximo_duracao_quiz: 300
   pontuacao_resposta_correta: 100
   penalidade_resposta_incorreta: 0.1
 
